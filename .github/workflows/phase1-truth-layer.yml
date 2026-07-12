@@ -18,17 +18,23 @@ jobs:
         with:
           python-version: "3.12"
       - name: Unit and integration tests
+        id: phase1_tests
+        continue-on-error: true
         shell: bash
         run: |
           status=0
           python -m unittest discover -s tests -p 'test_phase1*.py' -v > /tmp/phase1-tests.log 2>&1 || status=$?
-          if [ "$status" -ne 0 ]; then
-            echo "Phase 1 test failure summary:"
-            tail -n 14 /tmp/phase1-tests.log
-          else
-            tail -n 5 /tmp/phase1-tests.log
-          fi
+          echo "$status" > /tmp/phase1-tests.status
           exit "$status"
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1-test-diagnostics
+          path: |
+            /tmp/phase1-tests.log
+            /tmp/phase1-tests.status
+          if-no-files-found: error
       - name: Parse contracts
         run: |
           python - <<'PY'
@@ -48,3 +54,7 @@ jobs:
           python -m prepdrill_content --db /tmp/prepdrill.sqlite3 load-taxonomy taxonomy/paper1.v1.json
           python -m prepdrill_content --db /tmp/prepdrill.sqlite3 import tests/fixtures/phase1_valid.jsonl --source-document-id fixture-doc-001
           python -m prepdrill_content --db /tmp/prepdrill.sqlite3 readiness-report
+      - name: Enforce test result
+        if: always()
+        shell: bash
+        run: exit "$(cat /tmp/phase1-tests.status)"
