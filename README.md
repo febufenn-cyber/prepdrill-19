@@ -6,8 +6,8 @@ Prepdrill is a practice-first learning system. Its job is not merely to serve qu
 
 ## Current status
 
-- **Phase 0 — Strategic foundation:** implemented in draft PR #1.
-- **Phase 1 — Content truth layer:** implemented on `agent/phase-1-truth-layer`, stacked on Phase 0.
+- **Phase 0 — Strategic foundation:** merged into `main`.
+- **Phase 1 — Content truth layer:** merged into `main`.
 - **Phase 1 corpus-readiness evidence:** still open; real 100-question golden-set selection and 250-question audit cannot be fabricated from the blueprint-only repository.
 
 Start here:
