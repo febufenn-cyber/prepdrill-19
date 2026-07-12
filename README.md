@@ -1,42 +1,43 @@
 # Prepdrill
 
-> Codecademy-style interactive practice for Indian govt-exam aptitude — timed drills, instant AI explanations, weakness-targeted daily sets.
+> Daily adaptive drills for UGC NET aspirants, built from verified previous-year questions and personalized around actual weaknesses.
 
-**Alternative to the product-shape pioneered by Codecademy (YC S11)** — rank #19 of 500 in the [YC-500 Fable 5 Venture Blueprint](https://github.com/) (score 7.05/10).
+Prepdrill is a practice-first learning system. Its job is not merely to serve questions: it converts learner mistakes into a trustworthy next study action.
 
-## Why this exists
-Practice-first learning with instant feedback beat passive video courses. The buildable wedge: interactive practice engine with ai feedback for any skill domain.
+## Current status
 
-## MVP scope
-- [ ] Question bank importer
-- [ ] timed drill player
-- [ ] AI explanations on wrong answers
-- [ ] weakness heatmap
-- [ ] daily streaks
+**Phase 0 — Strategic foundation** is implemented on the product-planning track. It defines the first user, content trust rules, learning model, architecture boundaries, analytics, evidence gates, and the Phase 1 build contract.
 
-## Architecture
-`Workers+Supabase+Claude` — Cloudflare Workers + Hono API, Supabase (Postgres + RLS + Auth + pgvector), Claude API via Agent SDK (claude-fable-5 for agent reasoning, claude-haiku-4-5 for volume), wrangler deploys.
+Start here:
 
-**Integrations:** Claude API; Razorpay; WhatsApp Cloud API
-**Data:** Authored/licensed question banks per exam.
-**Agent core:** Agent generates fresh practice variants and personalized explanations from syllabus.
+- [`docs/phase-0/README.md`](docs/phase-0/README.md) — Phase 0 index and execution board
+- [`PHASE_1_BUILD_CONTRACT.md`](PHASE_1_BUILD_CONTRACT.md) — binding scope for the next implementation phase
+- [`schemas/question.schema.json`](schemas/question.schema.json) — canonical question interchange schema
+- [`scripts/content_audit.py`](scripts/content_audit.py) — zero-dependency JSON/JSONL corpus validator
 
-## Business
-| | |
-|---|---|
-| Monetization | INR 299-999/mo learner subscription |
-| First customer | UGC NET / SSC aspirants in India |
-| GTM wedge | Telegram/YouTube exam-prep communities; free daily drill funnel |
-| Competition risk | High: Testbook, Adda247 dominate |
-| Regulatory/trust risk | Low: consumer education content |
-| India angle | Core market is India; vernacular explanations via Claude. |
-| Difficulty / build time | Medium / 2-3 weeks |
+## Product wedge
 
-## 30-day plan
-- **W1:** core loop — Question bank importer + timed drill player
-- **W2:** AI explanations on wrong answers + weakness heatmap + daily streaks + auth + billing
-- **W3:** polish, instrument events, seed first users via: Telegram/YouTube exam-prep communities; free daily drill funnel
-- **W4:** launch + first revenue; kill/scale decision
+- **Initial exam:** UGC NET Paper 1
+- **Initial learner:** serious repeat aspirants who practise but cannot reliably identify what to revise next
+- **Core loop:** drill → diagnose → explain → target → re-check
+- **Expansion:** English Paper 2 after Paper 1 evidence gates pass
 
----
-*Built with Fable 5 (Claude Code). Blueprint row: inspired by Codecademy — "Interactive browser-based coding courses with instant feedback."*
+## Architecture direction
+
+`Cloudflare Workers + Hono + Supabase + provider-abstracted AI`
+
+- Supabase Postgres is the source of truth for published content, attempts, learner state, and entitlements.
+- Raw imports never flow directly into learner-facing APIs.
+- AI may explain or flag conflicts, but cannot silently alter canonical answers.
+- Attempts are append-only events so mastery models can be recomputed.
+
+## Phase 0 quality checks
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 scripts/content_audit.py tests/fixtures/valid_questions.jsonl
+```
+
+## Original blueprint
+
+The repository began as a Codecademy-shaped interactive exam-practice seed with timed drills, explanations, weakness analysis, streaks, Razorpay, WhatsApp, and authored/licensed question banks. Phase 0 narrows that broad idea into a testable UGC NET opening position before production feature work begins.
