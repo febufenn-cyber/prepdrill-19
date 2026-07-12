@@ -1,0 +1,22 @@
+# Phase 0 Execution Checklist
+
+- [x] Product charter committed
+- [x] First-user and non-goals locked
+- [x] Assumptions register created
+- [x] Research and evidence templates created
+- [x] Content trust constitution committed
+- [x] Canonical question schema committed
+- [x] Content audit script and tests committed
+- [x] Golden-set contract created
+- [x] Learning/recommendation semantics defined
+- [x] Architecture, identity and AI boundaries defined
+- [x] Analytics/GTM hypotheses defined
+- [x] Risk and exit gates defined
+- [x] Phase 1 build contract committed
+- [ ] Real participant interviews completed
+- [ ] 250-question corpus audit completed
+- [ ] 100-question golden set populated
+- [ ] Prototype tested with five or more learners
+- [ ] Targeted-vs-random relevance test passed
+- [ ] Distribution smoke test completed
+- [ ] Exit scorecard approved
