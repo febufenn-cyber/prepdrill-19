@@ -1,0 +1,28 @@
+name: Phase 0 quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate canonical fixture
+        run: python scripts/content_audit.py tests/fixtures/valid_questions.jsonl
+      - name: Ensure invalid fixture fails
+        run: |
+          if python scripts/content_audit.py tests/fixtures/invalid_questions.jsonl; then
+            echo "invalid fixture unexpectedly passed"
+            exit 1
+          fi
