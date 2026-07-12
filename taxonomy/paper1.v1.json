@@ -1,0 +1,71 @@
+{
+  "version": "paper1.v1",
+  "exam": "ugc_net",
+  "paper": "paper_1",
+  "units": [
+    {"unit_id": "u01_teaching_aptitude", "label": "Teaching Aptitude", "topics": [
+      {"topic_id": "u01_t01_teaching", "label": "Teaching", "concepts": [
+        {"concept_id": "u01_c01_nature_objectives", "label": "Nature and objectives of teaching"},
+        {"concept_id": "u01_c02_methods", "label": "Teaching methods"},
+        {"concept_id": "u01_c03_evaluation", "label": "Evaluation systems"}
+      ]}
+    ]},
+    {"unit_id": "u02_research_aptitude", "label": "Research Aptitude", "topics": [
+      {"topic_id": "u02_t01_methods", "label": "Research Methods", "concepts": [
+        {"concept_id": "u02_c01_research_types", "label": "Types of research"},
+        {"concept_id": "u02_c02_sampling", "label": "Sampling methods"},
+        {"concept_id": "u02_c03_variables", "label": "Variables and experimental design"}
+      ]}
+    ]},
+    {"unit_id": "u03_comprehension", "label": "Comprehension", "topics": [
+      {"topic_id": "u03_t01_reading", "label": "Reading Comprehension", "concepts": [
+        {"concept_id": "u03_c01_main_idea", "label": "Main idea and inference"},
+        {"concept_id": "u03_c02_argument", "label": "Argument and evidence"}
+      ]}
+    ]},
+    {"unit_id": "u04_communication", "label": "Communication", "topics": [
+      {"topic_id": "u04_t01_process", "label": "Communication Process", "concepts": [
+        {"concept_id": "u04_c01_models", "label": "Models of communication"},
+        {"concept_id": "u04_c02_barriers", "label": "Barriers to communication"}
+      ]}
+    ]},
+    {"unit_id": "u05_math_reasoning", "label": "Mathematical Reasoning and Aptitude", "topics": [
+      {"topic_id": "u05_t01_arithmetic", "label": "Arithmetic Aptitude", "concepts": [
+        {"concept_id": "u05_c01_ratio", "label": "Ratio and proportion"},
+        {"concept_id": "u05_c02_percentage", "label": "Percentages"},
+        {"concept_id": "u05_c03_time_work", "label": "Time and work"}
+      ]}
+    ]},
+    {"unit_id": "u06_logical_reasoning", "label": "Logical Reasoning", "topics": [
+      {"topic_id": "u06_t01_arguments", "label": "Arguments", "concepts": [
+        {"concept_id": "u06_c01_deduction", "label": "Deductive reasoning"},
+        {"concept_id": "u06_c02_induction", "label": "Inductive reasoning"},
+        {"concept_id": "u06_c03_fallacies", "label": "Informal and formal fallacies"}
+      ]}
+    ]},
+    {"unit_id": "u07_data_interpretation", "label": "Data Interpretation", "topics": [
+      {"topic_id": "u07_t01_tables_charts", "label": "Tables and Charts", "concepts": [
+        {"concept_id": "u07_c01_tables", "label": "Tabular interpretation"},
+        {"concept_id": "u07_c02_charts", "label": "Charts and graphs"}
+      ]}
+    ]},
+    {"unit_id": "u08_ict", "label": "Information and Communication Technology", "topics": [
+      {"topic_id": "u08_t01_digital", "label": "Digital Systems", "concepts": [
+        {"concept_id": "u08_c01_internet", "label": "Internet and networking"},
+        {"concept_id": "u08_c02_security", "label": "Digital security"}
+      ]}
+    ]},
+    {"unit_id": "u09_people_environment", "label": "People, Development and Environment", "topics": [
+      {"topic_id": "u09_t01_environment", "label": "Environment", "concepts": [
+        {"concept_id": "u09_c01_ecology", "label": "Ecology and ecosystems"},
+        {"concept_id": "u09_c02_sustainability", "label": "Sustainable development"}
+      ]}
+    ]},
+    {"unit_id": "u10_higher_education", "label": "Higher Education System", "topics": [
+      {"topic_id": "u10_t01_governance", "label": "Governance and Institutions", "concepts": [
+        {"concept_id": "u10_c01_institutions", "label": "Institutions of higher learning"},
+        {"concept_id": "u10_c02_policies", "label": "Policies and governance"}
+      ]}
+    ]}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": "golden-set.v1",
+  "target_size": 100,
+  "current_size": 0,
+  "status": "awaiting_real_corpus_selection",
+  "rules": [
+    "Every Paper 1 unit must be represented.",
+    "Every supported question type must be represented.",
+    "Known extraction failure classes must be represented.",
+    "The set must include expected-pass and expected-block records.",
+    "Every entry must identify its source checksum, expected canonical hash and expected validator codes."
+  ],
+  "entries": []
+}

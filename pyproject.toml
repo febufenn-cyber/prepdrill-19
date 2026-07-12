@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prepdrill-content"
+version = "0.1.0"
+description = "Prepdrill Phase 1 content truth layer"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+packages = ["prepdrill_content"]

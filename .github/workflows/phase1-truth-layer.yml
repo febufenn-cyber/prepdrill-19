@@ -1,0 +1,40 @@
+name: Phase 1 truth layer
+
+on:
+  pull_request:
+  push:
+    branches:
+      - agent/phase-1-truth-layer
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit and integration tests
+        run: python -m unittest discover -s tests -p 'test_phase1*.py' -v
+      - name: Parse contracts
+        run: |
+          python - <<'PY'
+          import json
+          for path in [
+              'schemas/question.v1.schema.json',
+              'taxonomy/paper1.v1.json',
+              'data/golden-set/manifest.v1.json',
+          ]:
+              with open(path, encoding='utf-8') as handle:
+                  json.load(handle)
+              print('parsed', path)
+          PY
+      - name: CLI smoke test
+        run: |
+          python -m prepdrill_content --db /tmp/prepdrill.sqlite3 init-db
+          python -m prepdrill_content --db /tmp/prepdrill.sqlite3 load-taxonomy taxonomy/paper1.v1.json
+          python -m prepdrill_content --db /tmp/prepdrill.sqlite3 import tests/fixtures/phase1_valid.jsonl --source-document-id fixture-doc-001
+          python -m prepdrill_content --db /tmp/prepdrill.sqlite3 readiness-report
