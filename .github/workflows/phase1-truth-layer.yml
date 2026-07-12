@@ -18,7 +18,17 @@ jobs:
         with:
           python-version: "3.12"
       - name: Unit and integration tests
-        run: python -m unittest discover -s tests -p 'test_phase1*.py' -v
+        shell: bash
+        run: |
+          status=0
+          python -m unittest discover -s tests -p 'test_phase1*.py' -v > /tmp/phase1-tests.log 2>&1 || status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "Phase 1 test failure summary:"
+            tail -n 14 /tmp/phase1-tests.log
+          else
+            tail -n 5 /tmp/phase1-tests.log
+          fi
+          exit "$status"
       - name: Parse contracts
         run: |
           python - <<'PY'
