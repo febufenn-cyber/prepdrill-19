@@ -317,7 +317,7 @@ class ContentRepository:
         for index, finding in enumerate(report.findings):
             finding_id = stable_id("finding", run_id, str(index), finding.code, finding.path)
             self.connection.execute(
-                "INSERT INTOvalidation_findings VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Validation_findings VALUES (?, ?, ?, ?, ?, ?)",
                 (finding_id, run_id, finding.level, finding.code, finding.path, finding.message),
             )
         self.connection.commit()
@@ -368,7 +368,7 @@ class ContentRepository:
         payload["workflow_state"] = "published"
         public_id = stable_id("pub", question_id, revision_id)
         self.connection.execute(
-            "INSERT INTO published_snapshots VALUES (?, ?, ?, ?, ?, ?, NULL)",
+            "INSERT INTO published_snapshots VALUES (?, ?, ?, ?, ?, ?,  NULL)",
             (public_id, question_id, revision_id, canonical_json(payload), content_hash(payload), utc_now()),
         )
         event_id = stable_id("review", revision_id, "publish", utc_now(), actor)
