@@ -9,17 +9,20 @@ Prepdrill is a practice-first learning system. Its job is not merely to serve qu
 - **Phase 0 — Strategic foundation:** merged into `main`.
 - **Phase 1 — Content truth layer:** merged into `main`.
 - **Phase 1.5 — Corpus readiness and launch gate:** implemented; real production evidence collection remains open.
-- **Phase 2 — Learner drill runtime:** blocked until a current real-corpus gate evaluation passes.
+- **Phase 2 — Learner drill runtime and evaluator:** implemented; production activation remains locked until a current real-corpus gate is authorized by a named owner.
 
 Start here:
 
 - [`docs/phase-0/README.md`](docs/phase-0/README.md) — product and evidence foundation
 - [`PHASE_1_BUILD_CONTRACT.md`](PHASE_1_BUILD_CONTRACT.md) — Phase 1 content contract
 - [`docs/phase-1/README.md`](docs/phase-1/README.md) — content truth-layer architecture
-- [`PHASE_15_BUILD_CONTRACT.md`](PHASE_15_BUILD_CONTRACT.md) — binding corpus-readiness contract
+- [`PHASE_15_BUILD_CONTRACT.md`](PHASE_15_BUILD_CONTRACT.md) — corpus-readiness contract
 - [`docs/phase-1.5/README.md`](docs/phase-1.5/README.md) — audit and launch-gate workflow
-- [`docs/phase-1.5/BLIND_SPOTS.md`](docs/phase-1.5/BLIND_SPOTS.md) — move-order and failure analysis
-- [`docs/phase-1.5/PHASE_15_EXIT_CHECKLIST.md`](docs/phase-1.5/PHASE_15_EXIT_CHECKLIST.md) — software and real-evidence gates
+- [`PHASE_2_BUILD_CONTRACT.md`](PHASE_2_BUILD_CONTRACT.md) — learner-runtime contract
+- [`docs/phase-2/README.md`](docs/phase-2/README.md) — runtime and evaluator behavior
+- [`docs/phase-2/BLIND_SPOTS.md`](docs/phase-2/BLIND_SPOTS.md) — failure analysis and mitigations
+- [`docs/phase-2/PHASE_2_EXIT_CHECKLIST.md`](docs/phase-2/PHASE_2_EXIT_CHECKLIST.md) — software and production activation gates
+- [`api/phase2.openapi.yaml`](api/phase2.openapi.yaml) — learner runtime HTTP contract
 
 ## Product wedge
 
@@ -47,16 +50,20 @@ latest revision fingerprint
   → duplicate adjudication
   → fail-closed launch gate
 
-Phase 2, only after the gate passes
-published snapshot
-  → drill session
-  → append-only learner attempts
-  → diagnosis and targeted re-check
+Phase 2
+current passed gate + named owner
+  → launch authorization
+  → deterministic adaptive/mixed/re-check session
+  → immutable learner attempt
+  → derived score and mastery
+  → reviewed grounded explanation
+  → weakness targeting and due re-check
+  → adversarial evaluator
 ```
 
-The reference implementation is dependency-free Python + SQLite for deterministic tests. Production migrations target Supabase Postgres with separate raw, core, review, and public boundaries. Readiness evidence remains internal and is not exposed to learner roles.
+The reference implementation is dependency-free Python + SQLite for deterministic tests. Production migrations target Supabase Postgres with separate raw, core, review, public, and learner-runtime boundaries. Learners may read only their own derived runtime state; trusted service logic owns writes and scoring.
 
-## Run the content and readiness layers
+## Run all layers
 
 ```bash
 python3 -m unittest discover -s tests -v
@@ -65,6 +72,14 @@ python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 load-taxonomy taxonomy/
 python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 import tests/fixtures/phase1_valid.jsonl --source-document-id fixture-doc-001
 python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 readiness-report
 python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 create-readiness-audit --name paper1-launch-v1 --target 250
+python3 -m prepdrill_content phase2-evaluate
+```
+
+After a real Phase 1.5 gate passes:
+
+```bash
+python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 phase2-authorize-launch GATE_ID --owner OWNER --reason REASON
+python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 phase2-create-session LEARNER_ID --size 10 --seed daily
 ```
 
 ## Non-negotiable boundaries
@@ -77,4 +92,7 @@ python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 create-readiness-audit 
 - Corpus audits pin exact revision hashes and become stale when the corpus changes.
 - Aggregate metrics cannot hide a failing unit or question type.
 - Duplicate candidates are never destructively merged without a recorded human decision.
-- Phase 2 does not begin until a real launch corpus returns `passed: true` under the current Phase 1.5 gate.
+- Phase 2 session creation requires a current passed readiness gate and named launch authorization.
+- Pre-attempt learner payloads never expose answers or reviewed explanations.
+- Attempts, session items, explanations, events, and evaluator reports are immutable.
+- The evaluator verifies software behavior but never substitutes for real corpus evidence or real learner-outcome measurement.
