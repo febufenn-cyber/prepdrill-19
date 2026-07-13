@@ -1,0 +1,108 @@
+openapi: 3.1.0
+info:
+  title: Prepdrill Phase 2 Learner Runtime
+  version: 1.0.0
+  description: Readiness-gated drill sessions. Writes are performed by the trusted runtime service.
+servers:
+  - url: https://api.prepdrill.example
+paths:
+  /v1/drill-sessions:
+    post:
+      operationId: createDrillSession
+      summary: Create a deterministic adaptive, mixed, or re-check session
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [size, seed, mode]
+              properties:
+                size: { type: integer, minimum: 1, maximum: 100 }
+                seed: { type: string, minLength: 1 }
+                mode: { enum: [adaptive, mixed, recheck] }
+      responses:
+        '201':
+          description: Learner-safe session without answers or explanations
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/drill-session.v1.schema.json
+        '423': { description: Runtime locked because readiness authorization is absent or stale }
+  /v1/drill-sessions/{sessionId}:
+    get:
+      operationId: getDrillSession
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Learner-safe session state
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/drill-session.v1.schema.json
+        '404': { description: Session not found or not owned by caller }
+  /v1/drill-sessions/{sessionId}/attempts:
+    post:
+      operationId: submitAttempt
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 8 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ordinal, response_ms]
+              properties:
+                ordinal: { type: integer, minimum: 0 }
+                selected_option_id: { type: [string, 'null'] }
+                response_ms: { type: integer, minimum: 0 }
+                timed_out: { type: boolean, default: false }
+      responses:
+        '201': { description: Immutable derived attempt }
+        '200': { description: Existing attempt returned for an idempotent replay }
+        '409': { description: Session item already has a different final attempt }
+  /v1/attempts/{attemptId}/explanation:
+    get:
+      operationId: getAttemptExplanation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: attemptId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Grounded reviewed explanation or explicit unavailable response
+  /v1/diagnosis:
+    get:
+      operationId: getDiagnosis
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Weakness heatmap and target concepts }
+  /v1/streak:
+    get:
+      operationId: getStreak
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Derived daily activity streak }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
