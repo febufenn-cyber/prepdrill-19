@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prepdrill.example/schemas/golden-set-manifest.v1.schema.json",
+  "title": "Prepdrill golden-set manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "target_size", "current_size", "entries"],
+  "properties": {
+    "version": {"const": "golden-set.v1"},
+    "target_size": {"type": "integer", "minimum": 100},
+    "current_size": {"type": "integer", "minimum": 0},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision_id", "question_id", "unit_id", "question_type",
+          "source_checksum", "expected_canonical_hash", "expected_validator_codes"
+        ],
+        "properties": {
+          "revision_id": {"type": "string", "minLength": 6},
+          "question_id": {"type": "string", "minLength": 6},
+          "unit_id": {"type": "string", "minLength": 2},
+          "question_type": {"type": "string", "minLength": 2},
+          "source_checksum": {"type": "string", "minLength": 8},
+          "expected_canonical_hash": {"type": "string", "minLength": 32},
+          "validation_mode": {"enum": ["normal", "publication"]},
+          "expected_validator_codes": {
+            "type": "array", "uniqueItems": true, "items": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

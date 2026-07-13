@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prepdrill.example/schemas/mapping-label.v1.schema.json",
+  "title": "Prepdrill independent concept label v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["revision_id", "reviewer", "concept_id"],
+  "properties": {
+    "revision_id": {"type": "string", "minLength": 6},
+    "reviewer": {"type": "string", "minLength": 1},
+    "concept_id": {"type": "string", "minLength": 2},
+    "recorded_at": {"type": "string", "format": "date-time"}
+  }
+}

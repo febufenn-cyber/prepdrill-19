@@ -1,0 +1,12 @@
+{
+  "audit_target": 250,
+  "golden_target": 100,
+  "launch_min_published": 100,
+  "mapping_min_items": 50,
+  "mapping_kappa_min": 0.8,
+  "dimension_pass_rate_min": 1.0,
+  "max_blocking_reviews": 0,
+  "max_pending_duplicates": 0,
+  "required_unit_count": 10,
+  "stratum_pass_rate_min": 1.0
+}
