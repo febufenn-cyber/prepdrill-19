@@ -1,4 +1,4 @@
-"""Command line operations for the Phase 1 content truth layer."""
+"""Command line operations for Prepdrill content and corpus readiness."""
 from __future__ import annotations
 
 import argparse
@@ -8,11 +8,21 @@ from pathlib import Path
 from typing import Any
 
 from .importer import import_file
+from .readiness import GateThresholds, ReadinessRepository
 from .repository import ContentRepository, PublicContentRepository
 
 
 def _json(value: object) -> None:
     print(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False))
+
+
+def _load_thresholds(path: Path | None) -> GateThresholds:
+    if path is None:
+        return GateThresholds()
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("threshold file must contain a JSON object")
+    return GateThresholds(**value)
 
 
 def _dispatch(args: Any, repo: ContentRepository) -> int:
@@ -59,6 +69,63 @@ def _dispatch(args: Any, repo: ContentRepository) -> int:
     if args.command == "scan-duplicates":
         _json({"inserted": repo.scan_duplicate_fingerprints()})
         return 0
+
+    readiness = ReadinessRepository(repo.connection)
+    if args.command == "create-readiness-audit":
+        _json(readiness.create_audit_run(
+            name=args.name,
+            sample_target=args.target,
+            seed=args.seed,
+        ))
+        return 0
+    if args.command == "readiness-sample":
+        _json(readiness.sample_items(args.run_id))
+        return 0
+    if args.command == "ingest-readiness-reviews":
+        result = readiness.ingest_reviews(args.run_id, args.path)
+        _json(result)
+        return 1 if result["errors"] else 0
+    if args.command == "ingest-mapping-labels":
+        result = readiness.ingest_mapping_labels(args.run_id, args.path)
+        _json(result)
+        return 1 if result["errors"] else 0
+    if args.command == "adjudicate-duplicate":
+        try:
+            adjudication_id = readiness.adjudicate_duplicate(
+                args.candidate_id,
+                reviewer=args.reviewer,
+                decision=args.decision,
+                reason=args.reason,
+                canonical_revision_id=args.canonical_revision_id,
+            )
+        except (KeyError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        _json({"adjudication_id": adjudication_id})
+        return 0
+    if args.command == "readiness-audit-report":
+        _json(readiness.audit_report(args.run_id))
+        return 0
+    if args.command == "validate-golden-set":
+        manifest = readiness.load_manifest(args.path)
+        scope = readiness.required_scope()
+        result = readiness.validate_golden_manifest(
+            manifest,
+            required_units=set(scope["units"]),
+            required_types=set(scope["question_types"]),
+        )
+        _json(result)
+        return 0 if result["ok"] else 1
+    if args.command == "evaluate-launch-gate":
+        manifest = readiness.load_manifest(args.path)
+        try:
+            thresholds = _load_thresholds(args.thresholds)
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        report = readiness.evaluate_launch_gate(args.run_id, manifest, thresholds)
+        _json(report.to_dict())
+        return 0 if report.passed else 1
     return 2
 
 
@@ -89,6 +156,33 @@ def main(argv: list[str] | None = None) -> int:
     public_list.add_argument("--limit", type=int, default=100)
     sub.add_parser("readiness-report")
     sub.add_parser("scan-duplicates")
+
+    create_audit = sub.add_parser("create-readiness-audit")
+    create_audit.add_argument("--name", required=True)
+    create_audit.add_argument("--target", type=int, default=250)
+    create_audit.add_argument("--seed", default="phase-1.5")
+    sample = sub.add_parser("readiness-sample")
+    sample.add_argument("run_id")
+    ingest_reviews = sub.add_parser("ingest-readiness-reviews")
+    ingest_reviews.add_argument("run_id")
+    ingest_reviews.add_argument("path", type=Path)
+    ingest_labels = sub.add_parser("ingest-mapping-labels")
+    ingest_labels.add_argument("run_id")
+    ingest_labels.add_argument("path", type=Path)
+    adjudicate = sub.add_parser("adjudicate-duplicate")
+    adjudicate.add_argument("candidate_id")
+    adjudicate.add_argument("--reviewer", required=True)
+    adjudicate.add_argument("--decision", required=True, choices=("same_question", "distinct_questions", "retire_left", "retire_right"))
+    adjudicate.add_argument("--canonical-revision-id")
+    adjudicate.add_argument("--reason", required=True)
+    audit_report = sub.add_parser("readiness-audit-report")
+    audit_report.add_argument("run_id")
+    validate_golden = sub.add_parser("validate-golden-set")
+    validate_golden.add_argument("path", type=Path)
+    launch_gate = sub.add_parser("evaluate-launch-gate")
+    launch_gate.add_argument("run_id")
+    launch_gate.add_argument("path", type=Path, help="Golden-set manifest")
+    launch_gate.add_argument("--thresholds", type=Path)
 
     args = parser.parse_args(argv)
     repo = ContentRepository.open(args.db)

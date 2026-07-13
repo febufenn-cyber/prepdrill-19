@@ -1,0 +1,46 @@
+name: Phase 1.5 corpus readiness
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - agent/phase-15-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Full test suite
+        run: python -m unittest discover -s tests -v
+      - name: Compile package
+        run: python -m compileall -q prepdrill_content tests
+      - name: Parse Phase 1.5 contracts
+        run: |
+          python - <<'PY'
+          import json
+          for path in [
+              'configs/phase15.default-thresholds.json',
+              'schemas/readiness-review.v1.schema.json',
+              'schemas/mapping-label.v1.schema.json',
+              'schemas/golden-set-manifest.v1.schema.json',
+          ]:
+              with open(path, encoding='utf-8') as handle:
+                  json.load(handle)
+              print('parsed', path)
+          PY
+      - name: Fail-closed CLI smoke test
+        run: |
+          python -m prepdrill_content --db /tmp/prepdrill.sqlite3 init-db
+          python -m prepdrill_content --db /tmp/prepdrill.sqlite3 create-readiness-audit --name empty --target 250
+          if python -m prepdrill_content --db /tmp/prepdrill.sqlite3 validate-golden-set data/golden-set/manifest.v1.json; then
+            echo "empty golden set unexpectedly passed"
+            exit 1
+          fi

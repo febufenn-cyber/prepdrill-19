@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prepdrill.example/schemas/readiness-review.v1.schema.json",
+  "title": "Prepdrill corpus-readiness review v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "revision_id", "reviewer", "verdict", "rights_ok", "answer_evidence_ok",
+    "render_ok", "mapping_ok", "provenance_ok", "review_seconds"
+  ],
+  "properties": {
+    "revision_id": {"type": "string", "minLength": 6},
+    "reviewer": {"type": "string", "minLength": 1},
+    "verdict": {"enum": ["pass", "needs_review", "block", "retire"]},
+    "rights_ok": {"type": "boolean"},
+    "answer_evidence_ok": {"type": "boolean"},
+    "render_ok": {"type": "boolean"},
+    "mapping_ok": {"type": "boolean"},
+    "provenance_ok": {"type": "boolean"},
+    "review_seconds": {"type": "integer", "minimum": 0},
+    "notes": {"type": "string"},
+    "reviewed_at": {"type": "string", "format": "date-time"}
+  }
+}
