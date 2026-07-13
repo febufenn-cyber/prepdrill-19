@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prepdrill.example/schemas/drill-session.v1.schema.json",
+  "title": "Prepdrill learner-safe drill session",
+  "type": "object",
+  "required": [
+    "session_id", "learner_id", "mode", "status", "item_count",
+    "attempt_count", "correct_count", "items"
+  ],
+  "properties": {
+    "session_id": {"type": "string", "pattern": "^session:"},
+    "learner_id": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["adaptive", "mixed", "recheck"]},
+    "status": {"enum": ["active", "completed", "abandoned"]},
+    "item_count": {"type": "integer", "minimum": 1},
+    "attempt_count": {"type": "integer", "minimum": 0},
+    "correct_count": {"type": "integer", "minimum": 0},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ordinal", "published_question_id", "question_id", "revision_id",
+          "selection_reason", "payload_hash", "question"
+        ],
+        "properties": {
+          "ordinal": {"type": "integer", "minimum": 0},
+          "published_question_id": {"type": "string", "pattern": "^pub:"},
+          "question_id": {"type": "string"},
+          "revision_id": {"type": "string"},
+          "selection_reason": {"type": "string"},
+          "payload_hash": {"type": "string", "minLength": 32},
+          "question": {
+            "type": "object",
+            "not": {
+              "anyOf": [
+                {"required": ["correct_option_id"]},
+                {"required": ["reviewed_explanation"]}
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

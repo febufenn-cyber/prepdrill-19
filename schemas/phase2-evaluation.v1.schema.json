@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prepdrill.example/schemas/phase2-evaluation.v1.schema.json",
+  "title": "Prepdrill Phase 2 evaluator report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evaluator_version", "passed", "metrics", "findings"],
+  "properties": {
+    "evaluator_version": {"const": "phase2-evaluator.v1"},
+    "passed": {"type": "boolean"},
+    "metrics": {
+      "type": "object",
+      "required": [
+        "selection_determinism", "unpublished_leaks", "duplicate_attempts",
+        "score", "mastery", "target_precision", "recheck_reasons",
+        "grounded_explanation_rate", "diagnosis_targets",
+        "stale_authorization_locked", "checks_run"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["level", "code", "message", "observed", "required"],
+        "properties": {
+          "level": {"enum": ["error", "warning"]},
+          "code": {"type": "string", "minLength": 2},
+          "message": {"type": "string", "minLength": 2},
+          "observed": {},
+          "required": {}
+        }
+      }
+    }
+  }
+}

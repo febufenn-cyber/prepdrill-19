@@ -1,4 +1,4 @@
-"""Command line operations for Prepdrill content and corpus readiness."""
+"""Command line operations for Prepdrill content, readiness, and learner runtime."""
 from __future__ import annotations
 
 import argparse
@@ -10,6 +10,7 @@ from typing import Any
 from .importer import import_file
 from .readiness import GateThresholds, ReadinessRepository
 from .repository import ContentRepository, PublicContentRepository
+from .runtime import EvaluationThresholds, Phase2Evaluator, RuntimeRepository
 
 
 def _json(value: object) -> None:
@@ -25,8 +26,19 @@ def _load_thresholds(path: Path | None) -> GateThresholds:
     return GateThresholds(**value)
 
 
+def _load_evaluation_thresholds(path: Path | None) -> EvaluationThresholds:
+    if path is None:
+        return EvaluationThresholds()
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("evaluator threshold file must contain a JSON object")
+    return EvaluationThresholds(**value)
+
+
 def _dispatch(args: Any, repo: ContentRepository) -> int:
     if args.command == "init-db":
+        ReadinessRepository(repo.connection)
+        RuntimeRepository(repo.connection)
         _json({"status": "ok", "database": args.db})
         return 0
     if args.command == "load-taxonomy":
@@ -72,11 +84,7 @@ def _dispatch(args: Any, repo: ContentRepository) -> int:
 
     readiness = ReadinessRepository(repo.connection)
     if args.command == "create-readiness-audit":
-        _json(readiness.create_audit_run(
-            name=args.name,
-            sample_target=args.target,
-            seed=args.seed,
-        ))
+        _json(readiness.create_audit_run(name=args.name, sample_target=args.target, seed=args.seed))
         return 0
     if args.command == "readiness-sample":
         _json(readiness.sample_items(args.run_id))
@@ -124,6 +132,81 @@ def _dispatch(args: Any, repo: ContentRepository) -> int:
             print(str(exc), file=sys.stderr)
             return 1
         report = readiness.evaluate_launch_gate(args.run_id, manifest, thresholds)
+        _json(report.to_dict())
+        return 0 if report.passed else 1
+
+    runtime = RuntimeRepository(repo.connection)
+    if args.command == "phase2-authorize-launch":
+        try:
+            authorization_id = runtime.authorize_launch(
+                args.evaluation_id, owner=args.owner, reason=args.reason
+            )
+        except (KeyError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        _json({"authorization_id": authorization_id})
+        return 0
+    if args.command == "phase2-revoke-launch":
+        _json({"revoked": runtime.revoke_launch(owner=args.owner, reason=args.reason)})
+        return 0
+    if args.command == "phase2-create-session":
+        try:
+            session = runtime.create_session(
+                args.learner_id,
+                size=args.size,
+                seed=args.seed,
+                mode=args.mode,
+                timezone_name=args.timezone,
+                now=args.now,
+            )
+        except (PermissionError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        _json(session)
+        return 0
+    if args.command == "phase2-submit":
+        try:
+            attempt = runtime.submit_attempt(
+                args.session_id,
+                args.ordinal,
+                idempotency_key=args.idempotency_key,
+                selected_option_id=args.selected_option_id,
+                response_ms=args.response_ms,
+                timed_out=args.timed_out,
+                now=args.now,
+            )
+        except (KeyError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        _json(attempt)
+        return 0
+    if args.command == "phase2-session":
+        try:
+            _json(runtime.get_session(args.session_id, include_answers=args.include_answers))
+        except KeyError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        return 0
+    if args.command == "phase2-diagnose":
+        _json(runtime.diagnose(args.learner_id, target_count=args.target_count, now=args.now))
+        return 0
+    if args.command == "phase2-explain":
+        try:
+            _json(runtime.explain_attempt(args.attempt_id))
+        except KeyError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        return 0
+    if args.command == "phase2-streak":
+        _json(runtime.streak(args.learner_id))
+        return 0
+    if args.command == "phase2-evaluate":
+        try:
+            thresholds = _load_evaluation_thresholds(args.thresholds)
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        report = Phase2Evaluator(thresholds).run()
         _json(report.to_dict())
         return 0 if report.passed else 1
     return 2
@@ -183,6 +266,42 @@ def main(argv: list[str] | None = None) -> int:
     launch_gate.add_argument("run_id")
     launch_gate.add_argument("path", type=Path, help="Golden-set manifest")
     launch_gate.add_argument("--thresholds", type=Path)
+
+    authorize = sub.add_parser("phase2-authorize-launch")
+    authorize.add_argument("evaluation_id")
+    authorize.add_argument("--owner", required=True)
+    authorize.add_argument("--reason", required=True)
+    revoke = sub.add_parser("phase2-revoke-launch")
+    revoke.add_argument("--owner", required=True)
+    revoke.add_argument("--reason", required=True)
+    create_session = sub.add_parser("phase2-create-session")
+    create_session.add_argument("learner_id")
+    create_session.add_argument("--size", type=int, default=10)
+    create_session.add_argument("--seed", default="daily")
+    create_session.add_argument("--mode", choices=("adaptive", "mixed", "recheck"), default="adaptive")
+    create_session.add_argument("--timezone", default="UTC")
+    create_session.add_argument("--now")
+    submit = sub.add_parser("phase2-submit")
+    submit.add_argument("session_id")
+    submit.add_argument("ordinal", type=int)
+    submit.add_argument("--idempotency-key", required=True)
+    submit.add_argument("--selected-option-id")
+    submit.add_argument("--response-ms", type=int, default=0)
+    submit.add_argument("--timed-out", action="store_true")
+    submit.add_argument("--now")
+    show_session = sub.add_parser("phase2-session")
+    show_session.add_argument("session_id")
+    show_session.add_argument("--include-answers", action="store_true")
+    diagnose = sub.add_parser("phase2-diagnose")
+    diagnose.add_argument("learner_id")
+    diagnose.add_argument("--target-count", type=int, default=3)
+    diagnose.add_argument("--now")
+    explain = sub.add_parser("phase2-explain")
+    explain.add_argument("attempt_id")
+    streak = sub.add_parser("phase2-streak")
+    streak.add_argument("learner_id")
+    evaluate = sub.add_parser("phase2-evaluate")
+    evaluate.add_argument("--thresholds", type=Path)
 
     args = parser.parse_args(argv)
     repo = ContentRepository.open(args.db)
