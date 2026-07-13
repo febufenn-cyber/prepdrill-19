@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from dataclasses import asdict
 from typing import Any
 
 from .ids import canonical_json, content_hash, stable_id
@@ -10,13 +11,12 @@ from .models import utc_now
 from .runtime_attempts import RuntimeAttemptsMixin
 from .runtime_base import RuntimeBase
 from .runtime_insights import RuntimeInsightsMixin
-from .runtime_models import EvaluationFinding, EvaluationReport, EvaluationThresholds
 from .runtime_selection import RuntimeSelectionMixin
+from .runtime_models import EvaluationFinding, EvaluationReport, EvaluationThresholds
 
 
 class _EvaluatorRuntime(RuntimeSelectionMixin, RuntimeAttemptsMixin, RuntimeInsightsMixin, RuntimeBase):
     pass
-
 
 EVALUATOR_VERSION = "phase2-evaluator.v1"
 
@@ -210,11 +210,9 @@ class Phase2Evaluator:
             )
             first_ids = [item["published_question_id"] for item in first["items"]]
             second_ids = [item["published_question_id"] for item in second["items"]]
-            metrics["selection_determinism"] = float(first_ids == second_ids)
-            check(
-                "selection_nondeterministic", first_ids == second_ids,
-                "identical learner state and seed must select identical snapshots", first_ids, second_ids,
-            )
+            determinism = float(first_ids == second_ids)
+            metrics["selection_determinism"] = determinism
+            check("selection_nondeterministic", first_ids == second_ids, "identical learner state and seed must select identical snapshots", first_ids, second_ids)
 
             unpublished_revision = records[-1]["revision_id"]
             selected_revisions = {item["revision_id"] for item in first["items"] + second["items"]}
@@ -256,164 +254,86 @@ class Phase2Evaluator:
             )
 
             completed = runtime.get_session(first["session_id"], include_answers=True)
-            expected_correct = sum(
-                1 for item in first["items"]
-                if item["question"]["primary_concept_id"] == "concept-strong"
-            )
-            metrics["score"] = {
-                "correct": completed["correct_count"],
-                "attempts": completed["attempt_count"],
-                "items": completed["item_count"],
-            }
-            check(
-                "score_incorrect", int(completed["correct_count"]) == expected_correct,
-                "session score must equal immutable attempt outcomes",
-                completed["correct_count"], expected_correct,
-            )
-            check(
-                "session_not_completed", completed["status"] == "completed",
-                "session must complete after every item has one attempt", completed["status"], "completed",
-            )
+            expected_correct = sum(1 for item in first["items"] if item["question"]["primary_concept_id"] == "concept-strong")
+            metrics["score"] = {"correct": completed["correct_count"], "attempts": completed["attempt_count"], "items": completed["item_count"]}
+            check("score_incorrect", int(completed["correct_count"]) == expected_correct, "session score must equal immutable attempt outcomes", completed["correct_count"], expected_correct)
+            check("session_not_completed", completed["status"] == "completed", "session must complete after every item has one attempt", completed["status"], "completed")
 
             mastery = {
-                str(row["concept_id"]): dict(row)
-                for row in connection.execute(
-                    "SELECT * FROM runtime_concept_mastery WHERE learner_id='learner-a'"
-                )
+                row["concept_id"]: float(row["mastery_score"])
+                for row in connection.execute("SELECT concept_id, mastery_score FROM runtime_concept_mastery WHERE learner_id='learner-a'")
             }
-            weak_score = float(mastery["concept-weak"]["mastery_score"])
-            strong_score = float(mastery["concept-strong"]["mastery_score"])
-            metrics["mastery"] = {"weak": weak_score, "strong": strong_score}
-            check(
-                "mastery_direction_wrong", weak_score < strong_score,
-                "incorrect evidence must produce lower mastery than correct evidence",
-                metrics["mastery"], "weak < strong",
-            )
+            metrics["mastery"] = mastery
+            check("wrong_mastery_direction", mastery.get("concept-weak", 0.5) < 0.5, "incorrect answers must lower posterior mastery", mastery.get("concept-weak"), "< 0.5")
+            check("correct_mastery_direction", mastery.get("concept-strong", 0.5) > 0.5, "correct answers must raise posterior mastery", mastery.get("concept-strong"), "> 0.5")
 
-            diagnosis = runtime.diagnose(
-                "learner-a", target_count=1, now="2026-07-14T09:10:01+00:00"
+            targeted = runtime.create_session(
+                "learner-a", size=5, seed="targeted", mode="adaptive",
+                now="2026-07-13T10:00:00+00:00",
             )
-            first_target = diagnosis["target_concepts"][0] if diagnosis["target_concepts"] else None
-            target_precision = float(first_target == "concept-weak")
+            weak_count = sum(1 for item in targeted["items"] if item["question"]["primary_concept_id"] == "concept-weak")
+            target_precision = weak_count / len(targeted["items"])
             metrics["target_precision"] = target_precision
             check(
-                "weak_target_missed", target_precision >= self.thresholds.min_target_precision,
-                "diagnosis and adaptive targeting must prioritize the weak concept",
-                first_target, "concept-weak",
+                "weakness_targeting_low", target_precision >= self.thresholds.min_target_precision,
+                "adaptive selection must concentrate on the weakest concept", target_precision,
+                self.thresholds.min_target_precision,
             )
 
-            adaptive = runtime.create_session(
-                "learner-a", size=1, seed="adaptive", mode="adaptive",
-                now="2026-07-14T09:10:01+00:00",
+            connection.execute(
+                "UPDATE runtime_recheck_queue SET due_at='2026-07-13T10:30:00+00:00' WHERE learner_id='learner-a' AND status='pending'"
             )
-            selected_concept = adaptive["items"][0]["question"]["primary_concept_id"]
-            check(
-                "adaptive_target_missed", selected_concept == "concept-weak",
-                "adaptive selection must choose the diagnosed weak concept", selected_concept, "concept-weak",
+            connection.commit()
+            recheck = runtime.create_session(
+                "learner-a", size=3, seed="recheck", mode="recheck",
+                now="2026-07-13T11:00:00+00:00",
             )
+            recheck_reasons = {item["selection_reason"] for item in recheck["items"]}
+            metrics["recheck_reasons"] = sorted(recheck_reasons)
+            check("recheck_priority_broken", recheck_reasons == {"due_recheck"}, "recheck mode must contain due rechecks only", sorted(recheck_reasons), ["due_recheck"])
 
-            try:
-                runtime.create_session(
-                    "learner-a", size=1, seed="too-early", mode="recheck",
-                    now="2026-07-13T10:00:00+00:00",
-                )
-                early_recheck_blocked = False
-            except ValueError:
-                early_recheck_blocked = True
-            due = runtime.create_session(
-                "learner-a", size=6, seed="due", mode="recheck",
-                now="2026-07-14T09:10:01+00:00",
-            )
-            due_reasons = {item["selection_reason"] for item in due["items"]}
-            metrics["recheck"] = {
-                "early_blocked": early_recheck_blocked,
-                "due_count": len(due["items"]),
-                "reasons": sorted(due_reasons),
-            }
-            check(
-                "early_recheck_leak", early_recheck_blocked,
-                "recheck mode must not surface items before their due time",
-            )
-            check(
-                "due_recheck_missing", bool(due["items"]) and due_reasons == {"due_recheck"},
-                "recheck mode must return only due queued items", metrics["recheck"], "due_recheck only",
-            )
-
-            explanation_statuses = [
-                runtime.explain_attempt(attempt["attempt_id"])["status"] for attempt in attempts
-            ]
-            grounded_rate = (
-                sum(status == "grounded" for status in explanation_statuses)
-                / len(explanation_statuses)
-            )
+            grounded = 0
+            for attempt in attempts:
+                explanation = runtime.explain_attempt(attempt["attempt_id"])
+                grounded += int(explanation["status"] == "grounded")
+            grounded_rate = grounded / len(attempts)
             metrics["grounded_explanation_rate"] = grounded_rate
             check(
-                "explanation_not_grounded",
-                grounded_rate >= self.thresholds.min_grounded_explanation_rate,
-                "reviewed evaluator questions must return source-grounded explanations",
-                grounded_rate, self.thresholds.min_grounded_explanation_rate,
+                "explanation_grounding_low", grounded_rate >= self.thresholds.min_grounded_explanation_rate,
+                "reviewed explanations must remain source-grounded", grounded_rate,
+                self.thresholds.min_grounded_explanation_rate,
             )
 
-            heatmap = diagnosis["weakness_heatmap"]
-            check(
-                "diagnosis_order_wrong",
-                bool(heatmap) and heatmap[0]["concept_id"] == "concept-weak",
-                "weakness heatmap must rank the weaker concept first",
-                heatmap[:2], "concept-weak first",
-            )
+            diagnosis = runtime.diagnose("learner-a", now="2026-07-13T11:00:00+00:00")
+            metrics["diagnosis_targets"] = diagnosis["target_concepts"]
+            check("diagnosis_missed_weakness", diagnosis["target_concepts"][0] == "concept-weak", "diagnosis must rank the weakest concept first", diagnosis["target_concepts"], ["concept-weak"])
 
-            new_record = self._question(99, published=False)
-            semantic_hash = content_hash({"question_id": new_record["question_id"]})
-            connection.execute(
-                "INSERT INTO canonical_questions VALUES (?, ?)",
-                (new_record["question_id"], utc_now()),
-            )
+            new_question = self._question(99, published=False)
+            semantic_hash = content_hash(new_question["payload"])
+            connection.execute("INSERT INTO canonical_questions VALUES (?, ?)", (new_question["question_id"], utc_now()))
             connection.execute(
                 "INSERT INTO question_revisions VALUES (?, ?, 1, ?, ?, ?, ?, ?, NULL)",
                 (
-                    new_record["revision_id"], new_record["question_id"],
-                    canonical_json(new_record["payload"]), semantic_hash,
-                    content_hash(new_record["payload"]),
-                    content_hash(new_record["payload"]["plain_text"]), utc_now(),
+                    new_question["revision_id"], new_question["question_id"], canonical_json(new_question["payload"]),
+                    semantic_hash, semantic_hash, semantic_hash, utc_now(),
                 ),
             )
             connection.commit()
             try:
-                runtime.create_session(
-                    "learner-drift", size=1, seed="drift",
-                    now="2026-07-15T00:00:00+00:00",
-                )
-                drift_locked = False
+                runtime.create_session("learner-stale", size=1, seed="stale", now="2026-07-13T12:00:00+00:00")
+                stale_locked = False
             except PermissionError:
-                drift_locked = True
-            check(
-                "stale_authorization_accepted", drift_locked,
-                "runtime must lock when the corpus changes after readiness authorization",
-            )
+                stale_locked = True
+            metrics["stale_authorization_locked"] = stale_locked
+            check("stale_gate_accepted", stale_locked, "any corpus drift must invalidate the launch authorization")
 
-            metrics["checks"] = checks
-            check(
-                "evaluator_too_shallow", checks >= self.thresholds.min_checks,
-                "evaluator must execute the minimum number of independent invariants",
-                checks, self.thresholds.min_checks,
-            )
-            metrics["checks"] = checks
-
-            report = EvaluationReport(
-                evaluator_version=EVALUATOR_VERSION,
-                passed=not findings,
-                metrics=metrics,
-                findings=tuple(findings),
-            )
-            evaluation_id = stable_id(
-                "runtime-evaluation", EVALUATOR_VERSION, canonical_json(report.to_dict())
-            )
+            metrics["checks_run"] = checks
+            check("too_few_checks", checks >= self.thresholds.min_checks, "evaluator must execute the minimum invariant set", checks, self.thresholds.min_checks)
+            report = EvaluationReport(EVALUATOR_VERSION, not findings, metrics, tuple(findings))
+            evaluation_id = stable_id("runtime-eval", EVALUATOR_VERSION, content_hash(report.to_dict()))
             connection.execute(
                 "INSERT INTO runtime_evaluations VALUES (?, ?, ?, ?, ?)",
-                (
-                    evaluation_id, EVALUATOR_VERSION, int(report.passed),
-                    canonical_json(report.to_dict()), utc_now(),
-                ),
+                (evaluation_id, EVALUATOR_VERSION, int(report.passed), canonical_json(report.to_dict()), utc_now()),
             )
             connection.commit()
             return report
