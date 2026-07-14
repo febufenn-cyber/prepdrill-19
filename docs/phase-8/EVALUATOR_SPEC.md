@@ -1,0 +1,3 @@
+# Phase 8 Evaluator Specification
+
+The evaluator exercises the actual access, sanitizer, replay, rate-limit, backup, reliability-budget, and kill-switch code. It verifies self-access, cross-user denial, unknown-action denial, recursive secret/PII/answer redaction, mutation replay rejection, idempotency collision detection, scoped rate limiting and window recovery, hostile input preservation as inert data, checksum-equal restore, corruption detection, p50/p95/p99/error-rate gates, safe switch defaults, audited switch changes, and minimum evaluator depth. Green software controls do not constitute a third-party penetration test or production load result.
