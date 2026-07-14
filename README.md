@@ -10,7 +10,8 @@ Prepdrill is a practice-first learning system. Its job is not merely to serve qu
 - **Phase 1 — Content truth layer:** merged into `main`.
 - **Phase 1.5 — Corpus readiness and launch gate:** implemented; real production evidence collection remains open.
 - **Phase 2 — Learner drill runtime and evaluator:** implemented; production activation remains locked until a current real-corpus gate is authorized by a named owner.
-- **Remaining roadmap — Phases 3–14:** 12 verification-first phases covering real corpus activation, product launch, monetization, scale, and Paper 2/native expansion.
+- **Phase 3 — Real corpus activation and data migration:** software implemented; real corpus evidence and named production authorization remain open.
+- **Remaining roadmap — Phases 4–14:** 11 verification-first phases covering application launch, monetization, scale, and Paper 2/native expansion.
 
 Start here:
 
@@ -24,6 +25,8 @@ Start here:
 - [`docs/phase-2/BLIND_SPOTS.md`](docs/phase-2/BLIND_SPOTS.md) — failure analysis and mitigations
 - [`docs/phase-2/PHASE_2_EXIT_CHECKLIST.md`](docs/phase-2/PHASE_2_EXIT_CHECKLIST.md) — software and production activation gates
 - [`api/phase2.openapi.yaml`](api/phase2.openapi.yaml) — learner runtime HTTP contract
+- [`PHASE_3_BUILD_CONTRACT.md`](PHASE_3_BUILD_CONTRACT.md) — real-corpus activation contract
+- [`docs/phase-3/README.md`](docs/phase-3/README.md) — activation and reversible migration workflow
 - [`docs/roadmap/REMAINING_PHASES_AUTONOMOUS_BUILD_PLAN.md`](docs/roadmap/REMAINING_PHASES_AUTONOMOUS_BUILD_PLAN.md) — canonical Phase 3–14 plan and `build` execution protocol
 
 ## Product wedge
@@ -61,9 +64,17 @@ current passed gate + named owner
   → reviewed grounded explanation
   → weakness targeting and due re-check
   → adversarial evaluator
+
+Phase 3
+fresh corpus delivery
+  → checksummed source manifest
+  → reversible migration batch
+  → count and relationship reconciliation
+  → current evidence and fingerprint
+  → named activation authorization
 ```
 
-The reference implementation is dependency-free Python + SQLite for deterministic tests. Production migrations target Supabase Postgres with separate raw, core, review, public, and learner-runtime boundaries. Learners may read only their own derived runtime state; trusted service logic owns writes and scoring.
+The reference implementation is dependency-free Python + SQLite for deterministic tests. Production migrations target Supabase Postgres with separate raw, core, review, public, activation, and learner-runtime boundaries. Learners may read only their own derived runtime state; trusted service logic owns writes and scoring.
 
 ## Run all layers
 
@@ -75,9 +86,10 @@ python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 import tests/fixtures/p
 python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 readiness-report
 python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 create-readiness-audit --name paper1-launch-v1 --target 250
 python3 -m prepdrill_content phase2-evaluate
+python3 -m prepdrill_content.phase3
 ```
 
-After a real Phase 1.5 gate passes:
+After a real Phase 1.5/3 gate passes:
 
 ```bash
 python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 phase2-authorize-launch GATE_ID --owner OWNER --reason REASON
@@ -87,7 +99,7 @@ python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 phase2-create-session L
 ## Non-negotiable boundaries
 
 - Raw imports never flow directly into learner-facing reads.
-- Canonical questions, revisions, source occurrences, and public snapshots have separate identities.
+- Canonical questions, revisions, source occurrences, and published snapshots have separate identities.
 - Corrections create new semantic revisions; they do not rewrite historical learner-visible content.
 - AI cannot silently change or directly publish canonical answers.
 - Missing assets, unresolved rights, unverified answers, disputes, or review-tier records fail publication.
@@ -95,6 +107,7 @@ python3 -m prepdrill_content --db /tmp/prepdrill.sqlite3 phase2-create-session L
 - Aggregate metrics cannot hide a failing unit or question type.
 - Duplicate candidates are never destructively merged without a recorded human decision.
 - Phase 2 session creation requires a current passed readiness gate and named launch authorization.
+- Phase 3 activation requires a fresh-source manifest, exact reconciliation, current evidence, and named authorization.
 - Pre-attempt learner payloads never expose answers or reviewed explanations.
-- Attempts, session items, explanations, events, and evaluator reports are immutable.
-- The evaluator verifies software behavior but never substitutes for real corpus evidence or real learner-outcome measurement.
+- Attempts, session items, explanations, events, evaluator reports, manifests, and migration events are immutable.
+- Evaluators verify software behavior but never substitute for real corpus evidence or real learner-outcome measurement.
