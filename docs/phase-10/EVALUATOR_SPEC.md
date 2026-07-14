@@ -1,0 +1,3 @@
+# Phase 10 Evaluator Specification
+
+The evaluator runs the actual signature verifier, immutable event store, subscription reducer, entitlement policy, reconciliation, and activation gate. It verifies valid and forged signatures, exact duplicate idempotency, changed-payload event collision, out-of-order rejection, paid activation, bounded trials and grace, cancellation-through-period-end, refund and chargeback revocation, progress preservation, missing-webhook repair from a newer provider snapshot, provider-outage safe state, sandbox/live secret isolation, disabled live mode without named activation, and minimum evaluator depth. Green software does not authorize live charging.
