@@ -1,0 +1,32 @@
+name: Phase 13 generated quarantine
+
+on:
+  pull_request:
+  push:
+    branches:
+      - agent/phase-13-generated-quarantine
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Full regression suite
+        run: python -m unittest discover -s tests -v
+      - name: Compile package
+        run: python -m compileall -q prepdrill_content tests
+      - name: Phase 13 evaluator
+        run: python -m prepdrill_content.phase13
+      - name: Contract presence
+        run: |
+          test -s PHASE_13_BUILD_CONTRACT.md
+          test -s docs/phase-13/BLIND_SPOTS.md
+          test -s docs/phase-13/EVALUATOR_SPEC.md
+          test -s docs/phase-13/PHASE_13_EXIT_CHECKLIST.md
+          test -s supabase/migrations/014_phase13_generated_quarantine.sql
