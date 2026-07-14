@@ -1,0 +1,3 @@
+# Phase 6 Evaluator Specification
+
+The evaluator simulates learner trajectories and executes the real mastery/planning code. It verifies correct and incorrect movement, uncertainty reduction with evidence, reduced weight for hints and answer changes, bounded anomalies, default exclusion of experimental attempts, deterministic seeded plans, weak/due coverage, concept diversity, exposure limits, visible rationales, read-only shadow comparison, and calibration/ranking sanity. A green evaluator proves algorithmic invariants only, not real educational impact.
