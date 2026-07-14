@@ -10,6 +10,7 @@ Prepdrill is a practice-first learning system. Its job is not merely to serve qu
 - **Phase 1 — Content truth layer:** merged into `main`.
 - **Phase 1.5 — Corpus readiness and launch gate:** implemented; real production evidence collection remains open.
 - **Phase 2 — Learner drill runtime and evaluator:** implemented; production activation remains locked until a current real-corpus gate is authorized by a named owner.
+- **Remaining roadmap — Phases 3–14:** 12 verification-first phases covering real corpus activation, product launch, monetization, scale, and Paper 2/native expansion.
 
 Start here:
 
@@ -23,6 +24,7 @@ Start here:
 - [`docs/phase-2/BLIND_SPOTS.md`](docs/phase-2/BLIND_SPOTS.md) — failure analysis and mitigations
 - [`docs/phase-2/PHASE_2_EXIT_CHECKLIST.md`](docs/phase-2/PHASE_2_EXIT_CHECKLIST.md) — software and production activation gates
 - [`api/phase2.openapi.yaml`](api/phase2.openapi.yaml) — learner runtime HTTP contract
+- [`docs/roadmap/REMAINING_PHASES_AUTONOMOUS_BUILD_PLAN.md`](docs/roadmap/REMAINING_PHASES_AUTONOMOUS_BUILD_PLAN.md) — canonical Phase 3–14 plan and `build` execution protocol
 
 ## Product wedge
 
