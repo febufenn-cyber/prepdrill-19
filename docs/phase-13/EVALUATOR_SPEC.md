@@ -1,0 +1,3 @@
+# Phase 13 Evaluator Specification
+
+The evaluator executes the real lineage, solver-claim, quarantine validation, promotion, shadow release, complaint, stop-rule, retirement, and cost code. It verifies quarantine by default; two independent agreeing solver claims; disagreement and insufficient-claim blocks; answer-option validity; duplicate, ambiguity, concept drift, and difficulty-range blocks; mandatory named human promotion; preserved generated provenance; default exclusion from official archives, mocks, and mastery; deterministic automatic stop and retirement after complaint/quality thresholds; and cost per approved item including rejected candidates. Green software does not fabricate human review or real psychometrics.
