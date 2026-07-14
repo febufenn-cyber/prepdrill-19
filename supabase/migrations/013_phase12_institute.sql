@@ -1,0 +1,21 @@
+-- Phase 12 tenant-isolated institute and admin operations.
+create schema if not exists institute_ops;
+create table if not exists institute_ops.tenants(tenant_id text primary key,name text not null,created_at timestamptz not null default now());
+create table if not exists institute_ops.memberships(tenant_id text not null references institute_ops.tenants(tenant_id),user_id uuid not null references auth.users(id),role text not null,primary key(tenant_id,user_id));
+create table if not exists institute_ops.cohorts(cohort_id text primary key,tenant_id text not null references institute_ops.tenants(tenant_id),name text not null);
+create table if not exists institute_ops.enrollments(cohort_id text not null references institute_ops.cohorts(cohort_id),learner_id uuid not null references auth.users(id),primary key(cohort_id,learner_id));
+create table if not exists institute_ops.assignments(assignment_id text primary key,tenant_id text not null references institute_ops.tenants(tenant_id),cohort_id text not null references institute_ops.cohorts(cohort_id),target_id text not null,target_type text not null,created_by uuid not null references auth.users(id),created_at timestamptz not null default now());
+create table if not exists institute_ops.bulk_operations(operation_id text primary key,tenant_id text not null references institute_ops.tenants(tenant_id),operation_type text not null,payload jsonb not null,impact jsonb not null,status text not null,proposed_by uuid not null references auth.users(id),approved_by uuid references auth.users(id),executed_state jsonb);
+create table if not exists institute_ops.bulk_events(event_id text primary key,operation_id text not null references institute_ops.bulk_operations(operation_id),event_type text not null,actor_id uuid not null references auth.users(id),payload jsonb not null,created_at timestamptz not null default now());
+create table if not exists institute_ops.exports(export_id text primary key,tenant_id text not null references institute_ops.tenants(tenant_id),requested_by uuid not null references auth.users(id),fields jsonb not null,payload jsonb not null,fingerprint text not null,created_at timestamptz not null default now());
+alter table institute_ops.tenants enable row level security;
+alter table institute_ops.memberships enable row level security;
+alter table institute_ops.cohorts enable row level security;
+alter table institute_ops.enrollments enable row level security;
+alter table institute_ops.assignments enable row level security;
+alter table institute_ops.bulk_operations enable row level security;
+alter table institute_ops.bulk_events enable row level security;
+alter table institute_ops.exports enable row level security;
+create policy "members read own tenants" on institute_ops.tenants for select to authenticated using (exists(select 1 from institute_ops.memberships m where m.tenant_id=tenants.tenant_id and m.user_id=auth.uid()));
+create policy "members read tenant cohorts" on institute_ops.cohorts for select to authenticated using (exists(select 1 from institute_ops.memberships m where m.tenant_id=cohorts.tenant_id and m.user_id=auth.uid()));
+revoke insert, update, delete on all tables in schema institute_ops from anon, authenticated;
