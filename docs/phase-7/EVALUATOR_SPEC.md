@@ -1,0 +1,3 @@
+# Phase 7 Evaluator Specification
+
+The evaluator executes the real mock repository and state machine. It verifies immutable manifest order, answer redaction before submit, all palette states, idempotent autosave, Clear Response, reconnect restoration, server-owned remaining time, forced deadline submission, exact scoring, duplicate-submit safety, revision-pinned review, post-submit answer visibility, and keyboard command mapping. A green evaluator proves state-machine behavior, not final visual parity on every target device.
