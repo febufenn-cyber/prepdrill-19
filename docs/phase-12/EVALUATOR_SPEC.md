@@ -1,0 +1,3 @@
+# Phase 12 Evaluator Specification
+
+The evaluator executes the real tenant, membership, cohort, assignment, aggregate-report, export, and bulk-operation code. It verifies cross-tenant read/write/export denial, membership-role enforcement, role-escalation denial, small-cohort suppression, aggregate-only reporting, rejection of unpublished assignment content, tenant-scoped export fields and fingerprints, required dry-run, independent approval, execution audit, compensating rollback, and preservation of Phase 1 content blockers. Green software does not claim a deployed dashboard or institute customer.
