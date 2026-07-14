@@ -1,0 +1,3 @@
+# Phase 11 Evaluator Specification
+
+The evaluator executes the real public-page gate, SEO metadata, signed deep-link, attribution, referral, experiment, and conversion code. It verifies rights/publication eligibility, noindex for blocked/retired/experimental records, canonical and sitemap consistency, deep-link signature and destination validation, first/last touch preservation through guest merge, single conversion attribution, self-referral and device/redeem abuse prevention, required experiment hypothesis/metric/guardrails, deterministic allocation, kill switches, and meaningful conversion metrics. Green software does not prove acquisition efficiency.
