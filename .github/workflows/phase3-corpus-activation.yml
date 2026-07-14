@@ -1,0 +1,32 @@
+name: Phase 3 corpus activation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - agent/phase-3-corpus-activation
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Full regression suite
+        run: python -m unittest discover -s tests -v
+      - name: Compile package
+        run: python -m compileall -q prepdrill_content tests
+      - name: Phase 3 adversarial evaluator
+        run: python -m prepdrill_content.phase3
+      - name: Contract presence
+        run: |
+          test -s PHASE_3_BUILD_CONTRACT.md
+          test -s docs/phase-3/BLIND_SPOTS.md
+          test -s docs/phase-3/EVALUATOR_SPEC.md
+          test -s docs/phase-3/PHASE_3_EXIT_CHECKLIST.md
+          test -s supabase/migrations/004_phase3_corpus_activation.sql
