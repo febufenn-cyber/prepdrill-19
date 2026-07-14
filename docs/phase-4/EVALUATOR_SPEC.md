@@ -1,0 +1,3 @@
+# Phase 4 Evaluator Specification
+
+The evaluator uses the real identity repository, application service, and structured renderer. It verifies guest progress transfer, authenticated-account precedence over onboarding names, idempotent merge retries, cross-account collision rejection, second-device recovery, Phase 3 activation locking, all six flow modes, allow-list pre-attempt redaction, ignored client score/mastery fields, idempotent submission, interrupted-flow recovery, and every supported structured block type. A green evaluator proves the service boundary, not a deployed public client.
