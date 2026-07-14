@@ -1,0 +1,3 @@
+# Phase 5 Evaluator Specification
+
+The evaluator executes the real grounding, generation, validation, review, caching, and visibility code against adversarial provider outputs. It checks approved grounded output, official-answer consistency, evidence-reference containment, distractor-specific completeness, deterministic version-sensitive caching, cost ceilings, model routing, provider outage fallback, immutable revisions, review-queue creation, learner visibility rules, and absence of any canonical-answer/mastery write path. A green evaluator proves software controls only; it does not fabricate human review or production AI credentials.
