@@ -1,0 +1,3 @@
+# Phase 9 Evaluator Specification
+
+The evaluator executes the actual streak, report, notebook, policy, queue, and adapter code. It verifies that only completed scored work counts toward streaks; weekly totals reconcile to immutable attempts; error entries preserve exact attempt and revision IDs; consent and unsubscribe override campaigns; quiet hours work both normally and across midnight; frequency caps are learner/channel/category scoped; idempotency prevents duplicate queue entries; every queued message has a meaningful action; disabled adapters perform no live send; and minimum evaluator depth is met. Green software does not claim improved retention.
